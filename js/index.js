@@ -159,30 +159,52 @@ axios.get('http://167.71.45.243:4000/api/employes?api_key=urrzckb')
   * 
   * fill my inputs
   *  @param {e}
-  * 
   */
-  function onUpdate(e){
-      let buttonsave=document.querySelector("#save");
-      buttonsave.style.display="none";
-      let buttonupdate=document.querySelector("#update");
-      buttonupdate.style.display="inherit";
-      manipulateurForm.id.style.display="inherit";
-      manipulateurForm.makeIdReadOnly();
+  function onUpdate(e){ 
+      /**
+       * Axios fonctionne en asynchrone c'est-à-dire les données qui viendrons de l'API ne seront pas directement
+       * disponible au chargement de la page, les données vont arriver avec un petit rétard (dépendamment du réseau)
+       * Alors pour ne pas ennuyer l'utilisateur on afficher un message de chargement en attendant que les données
+       * arrivent
+       */
+      manipulateurForm.showOverlay();
+
+
       let ids=e.target.dataset.target;
+
       axios.get(`http://167.71.45.243:4000/api/employes/${ids}?api_key=urrzckb`)
-      .then(function(response){
-        manipulateurForm.setId(response.data._id);
-        manipulateurForm.setNom(response.data.nom);
-        manipulateurForm.setPrenom(response.data.prenom);
-        manipulateurForm.setMarierOui(response.data.estMarie)
-        manipulateurForm.appendPost(response.data.poste);
-        manipulateurForm.setPhone(response.data.numeroTelephone);
-        manipulateurForm.setEmail(response.data.email);
-        manipulateurForm.setPays(response.data.pays);
-      })
-      .catch(function(err){
-          console.log(err.response)
-      })
+        .then(function(response){
+
+            let buttonsave=document.querySelector("#save");
+            buttonsave.style.display="none";
+            let buttonupdate=document.querySelector("#update");
+            buttonupdate.style.display="inherit";
+            manipulateurForm.id.style.display="inherit";
+            manipulateurForm.makeIdReadOnly();
+
+            manipulateurForm.setId(response.data._id);
+            manipulateurForm.setNom(response.data.nom);
+            manipulateurForm.setPrenom(response.data.prenom);
+            manipulateurForm.setMarierOui(response.data.estMarie)
+            manipulateurForm.appendPost(response.data.poste);
+            manipulateurForm.appendPays(response.data.pays);
+            manipulateurForm.setPhone(response.data.numeroTelephone);
+            manipulateurForm.setEmail(response.data.email);
+
+            /**
+             * Toutes les données sont bien arrivées et chargées dans le formulaire, maintenant on cache le 
+             * message de chargement.
+             */
+            manipulateurForm.hideOverlay();
+        })
+        .catch(function(err){
+            /**
+             * En cas d'erreur on cache aussi le message de chargement.
+             */
+            manipulateurForm.hideOverlay();
+            console.log(err.response)
+        })
+    ;
 
   }
   /**
@@ -192,7 +214,7 @@ axios.get('http://167.71.45.243:4000/api/employes?api_key=urrzckb')
    */
   let buttonupdatedata=document.querySelector("#update");
   let buttonsave=document.querySelector("#save");
-  buttonupdatedata.addEventListener('click',(e)=>{
+  buttonupdatedata.addEventListener('click',(e)=>{ 
       let index= employer.findIndex(employers => employers.id === manipulateurForm.getId());
        employer.splice(index,1,{
            id:manipulateurForm.getId(),
@@ -336,7 +358,7 @@ ManipulateurForm.prototype.setPoste=function(value){
  *  @returns {void}
  */
 ManipulateurForm.prototype.setPhone=function(value){
-    this.phone.value=value;
+    this.phone.value= value ? value : '';
 }
 /**
   *  @param {void}
@@ -352,15 +374,73 @@ ManipulateurForm.prototype.setPhone=function(value){
 ManipulateurForm.prototype.setPays=function(value){
     this.pays.value=value;
 }
+
+ManipulateurForm.prototype.appendPays = function(pays) {
+    let paysSelect = document.querySelector('#poste');
+    let optionExists = false; // Permet d'indiquer si l'option existe déjà dans le select ou pas.
+
+    /**
+     * Vérifie si l'option existe déjà c'est-à-dire si le pays est déjà 
+     * dans le select parmi les options pour éviter le doublon.
+     */
+    for (let option of paysSelect.options) {
+        if (option.value == poste) {
+            optionExists = true;
+            break;
+        }
+    }
+
+    /**
+     * Si l'option n'existe pas alors on l'ajoute en d'autre terme, si le pays n'est pas encore 
+     * dans le select on l'ajoute dans le cas contraire on ne l'ajoute pas.
+     * 
+     */
+    if (!optionExists) {
+        let option=document.createElement('option');
+        option.value= pays;
+        option.textContent= pays;
+        document.querySelector("#pays").append(option); 
+    }
+
+    // Après Avoir ajouté le pays dans le select on le sélectionne directement comme valeur du select
+    // Si on efface cette ligne c'est le premier élement du select qui sera sélectionné comme par défaut.
+    this.setPays(pays);
+}
+
 /**
   *  @param {void}
   *  @returns {string}
   */
  ManipulateurForm.prototype.appendPost=function(poste){
-     let option=document.createElement('option');
-     option.value=poste;
-     option.textContent=poste;
-     document.querySelector("#poste").append(option);  
+    let posteSelect = document.querySelector('#poste');
+    let optionExists = false; // Permet d'indiquer si l'option existe déjà dans le select ou pas.
+
+    /**
+     * Vérifie si l'option existe déjà c'est-à-dire si le poste est déjà 
+     * dans le select parmi les options pour éviter le doublon.
+     */
+    for (let option of posteSelect.options) {
+        if (option.value == poste) {
+            optionExists = true;
+            break;
+        }
+    }
+
+    /**
+     * Si l'option n'existe pas alors on l'ajoute en d'autre terme, si le poste n'est pas encore 
+     * dans le select on l'ajoute dans le cas contraire on ne l'ajoute pas.
+     * 
+     */
+    if (!optionExists) {
+        let option=document.createElement('option');
+        option.value=poste;
+        option.textContent=poste;
+        document.querySelector("#poste").append(option); 
+    }
+
+    // Après Avoir ajouté le poste dans le select on le sélectionne directement comme valeur du select
+    // Si on efface cette ligne c'est le premier élement du select qui sera sélectionné comme par défaut.
+    this.setPoste(poste);
 }
 
 /**
@@ -390,4 +470,22 @@ ManipulateurForm.prototype.makeIdReadOnly = function() {
 
 ManipulateurForm.prototype.removeReadOnlyConstraint = function() {
     this.id.removeAttribute('readOnly');
+}
+
+/**
+ * Affiche le div de chargement
+ * 
+ * @return {void}
+ */
+ManipulateurForm.prototype.showOverlay = function() {
+    document.querySelector('div.overlay').style.visibility = 'visible';
+}
+
+/**
+ * Cache le div de chargement
+ * 
+ * @return {void}
+ */
+ManipulateurForm.prototype.hideOverlay = function() {
+    document.querySelector('div.overlay').style.visibility = 'hidden';
 }
