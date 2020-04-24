@@ -81,7 +81,7 @@ axios.get('http://167.71.45.243:4000/api/employes?api_key=urrzckb')
         let tdPrenom=document.createElement("td");
         tdPrenom.textContent=employer.prenom;
         let tdEstmaries=document.createElement("td");
-        tdEstmaries.textContent=employer.estMarie;
+        tdEstmaries.textContent=employer.estMarie ? 'Oui' : 'Non';
         let tdPays=document.createElement("td");
         tdPays.textContent=employer.pays;
         let tdEmail=document.createElement("td");
@@ -185,7 +185,7 @@ axios.get('http://167.71.45.243:4000/api/employes?api_key=urrzckb')
             manipulateurForm.setId(response.data._id);
             manipulateurForm.setNom(response.data.nom);
             manipulateurForm.setPrenom(response.data.prenom);
-            manipulateurForm.setMarierOui(response.data.estMarie)
+            manipulateurForm.setEstMarie(response.data.estMarie);
             manipulateurForm.appendPost(response.data.poste);
             manipulateurForm.appendPays(response.data.pays);
             manipulateurForm.setPhone(response.data.numeroTelephone);
@@ -214,24 +214,30 @@ axios.get('http://167.71.45.243:4000/api/employes?api_key=urrzckb')
    */
   let buttonupdatedata=document.querySelector("#update");
   let buttonsave=document.querySelector("#save");
-  buttonupdatedata.addEventListener('click',(e)=>{ 
-      let index= employer.findIndex(employers => employers.id === manipulateurForm.getId());
-       employer.splice(index,1,{
-           id:manipulateurForm.getId(),
-           nom:manipulateurForm.getNom(),
-           prenom:manipulateurForm.getPrenom(),
-           email:manipulateurForm.getEmail(),
-           age:manipulateurForm.getAge(),
-           poste:manipulateurForm.getAge(),
-           telephone:manipulateurForm.getPhone(),
-           status:manipulateurForm.getStatus(),
-           pays:manipulateurForm.getStatus()
-       })
-       afficherTable(employer);
-       buttonupdatedata.style.display="none";
-       buttonsave.style.display="inherit";
-       manipulateurForm.removeReadOnlyConstraint();
-       manipulateurForm.initializeInput();
+  buttonupdatedata.addEventListener('click',(e) => {
+      let ids = manipulateurForm.getId();
+      manipulateurForm.showOverlay();
+
+      axios.put(`http://167.71.45.243:4000/api/employes/${ids}?api_key=urrzckb`, {
+        nom:manipulateurForm.getNom(),
+        prenom:manipulateurForm.getPrenom(),
+        email:manipulateurForm.getEmail(),
+        poste:manipulateurForm.getPoste(),
+        numeroTelephone:manipulateurForm.getPhone(),
+        estMarie: manipulateurForm.getEstMarie(),
+        pays:manipulateurForm.getPays()
+      }).then(response => {
+        console.log(response.data);
+        afficherTable();  
+        manipulateurForm.hideOverlay();
+      }).catch(error => {
+          console.log(error);
+      });
+
+      buttonupdatedata.style.display = "none";
+      buttonsave.style.display = "inherit";
+      manipulateurForm.removeReadOnlyConstraint();
+      manipulateurForm.initializeInput();
   })
 
 /**
@@ -311,12 +317,41 @@ ManipulateurForm.prototype.setEmail=function(value){
  ManipulateurForm.prototype.getMarierOui=function(){
     return this.marieroui.value;
 }
+
 /**
- *  @param {string}value
+ * Obtient le status de l'employé. Renvoie true s'il est marié et false dans le cas
+ * contraire.
+ * 
+ * @return {boolean}
+ */
+ManipulateurForm.prototype.getEstMarie = function() {
+     return this.marieroui.checked ? 
+        this.marieroui.value :
+        this.mariernon.value;
+}
+
+/**
+ * Indique sur le formulaire si l'employé est marié ou pas.
+ * 
+ * @param {boolean} value
+ * @return {void}
+ */
+ManipulateurForm.prototype.setEstMarie = function(value) {
+    if (value == true) {
+        this.setMarierNon(false);
+        this.setMarierOui(true);
+    } else {
+        this.setMarierNon(true);
+        this.setMarierOui(false);
+    }
+}
+
+/**
+ *  @param {boolean} value
  *  @returns {void}
  */
 ManipulateurForm.prototype.setMarierOui=function(value){
-    this.marieroui.value=value;
+    this.marieroui.checked = value;
 }
 /**
   *  @param {void}
@@ -326,11 +361,11 @@ ManipulateurForm.prototype.setMarierOui=function(value){
     return this.mariernon.value;
 }
 /**
- *  @param {string}value
+ *  @param {boolean} value
  *  @returns {void}
  */
 ManipulateurForm.prototype.setMarierNon=function(value){
-    this.mariernon.value=value;
+    this.mariernon.checked = value;
 }
 /**
   *  @param {void}
@@ -452,8 +487,8 @@ ManipulateurForm.prototype.initializeInput=function(){
     this.setNom('');
     this.setPrenom('');
     this.setEmail('');
-    this.setMarierOui('');
-    this.setMarierNon('');
+    this.setMarierOui(false);
+    this.setMarierNon(false);
     this.setPhone('');
 }
 /**
